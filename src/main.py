@@ -136,6 +136,7 @@ def date_validator(timestamp, v):
         return 0
 
 
+
 try:
     days_timestamp = datetime.datetime.now().timestamp() + int(input(Fore.GREEN + 'Введите кол-во дней:')) * 86400
 except:
