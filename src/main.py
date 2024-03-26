@@ -36,7 +36,7 @@ class MainDriver:
 
         try:
             options = Options()
-            options.add_argument("--headless")
+            #options.add_argument("--headless")
             options.add_argument("--disable-blink-features=AutomationControlled")
             # options.add_argument("--ignore-certificate-errors")
             options.add_experimental_option('useAutomationExtension', False)
