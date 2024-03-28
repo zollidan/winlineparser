@@ -22,7 +22,8 @@ from selenium.webdriver.support.wait import WebDriverWait
 from tqdm import tqdm
 
 from config import PARSER_URL, COUNTRY_CLICK_XPATH, LEAGUE_BLOCK_XPATH, LEAGUE_NAME_CLASS, \
-    MATCHES_BLOCK_CLASS, EXCEL_HEADERS, BOTTOM_SIGN, COUPON_ROW_ITEM, ITERATIONS_TO_BOTTOM
+    MATCHES_BLOCK_CLASS, EXCEL_HEADERS, BOTTOM_SIGN, ITERATIONS_TO_BOTTOM, CATEGORY_CONTAINER, \
+    BG_COUPON_ROW, change_month, change_date, DEBUG_MODE
 from schemas import FootballRow
 
 
@@ -87,36 +88,6 @@ class MainDriver:
     def scroll_into_view(self, element: WebElement) -> typing.NoReturn:
         self.driver.execute_script('arguments[0].scrollIntoView(true)', element)
 
-
-# def change_date(month):
-#     try:
-#         # day = dateTime[0]
-#         # month = dateTime[1]
-#         # time = dateTime[2]
-#         if month == "янв": month = "01"
-#         if month == "фев": month = "02"
-#         if month == "мар": month = "03"
-#         if month == "апр": month = "04"
-#         if month == "май": month = "05"
-#         if month == "июн": month = "06"
-#         if month == "июл": month = "07"
-#         if month == "авг": month = "08"
-#         if month == "сен": month = "09"
-#         if month == "окт": month = "10"
-#         if month == "ноя": month = "11"
-#         if month == "дек": month = "12"
-#     except IndexError:
-#         if month == 1: month = "01"
-#         if month == 2: month = "02"
-#         if month == 3: month = "03"
-#         if month == 4: month = "04"
-#         if month == 5: month = "05"
-#         if month == 6: month = "06"
-#         if month == 7: month = "07"
-#         if month == 8: month = "08"
-#         if month == 9: month = "09"
-
-
 print(Fore.GREEN + "собираю дату")
 
 main_driver = MainDriver()
@@ -129,39 +100,87 @@ for i in tqdm(range(ITERATIONS_TO_BOTTOM), desc='обрабатываю сайт
     main_driver.scroll_into_view(bottom_sign)
     time.sleep(0.5)
 
-games = main_driver.find_elements(COUPON_ROW_ITEM)
+leagues = main_driver.find_elements(CATEGORY_CONTAINER)
 
-games_list = []
+leagues_list = []
 
-for game in games:
-    games_list.append(game)
-print(f"я нашел {len(games_list)} матча за 24 часа, работаем...")
+for league in leagues:
+    leagues_list.append(league)
 
-for one_game in games_list:
-    team1 = one_game.find_elements(By.CLASS_NAME, 'member-link')[0].text
-    team2 = one_game.find_elements(By.CLASS_NAME, 'member-link')[1].text
 
-    coffi0 = one_game.find_elements(By.XPATH, "//td[@data-market-type='RESULT']")[0].text
+def games_counter():
+    games = main_driver.find_elements(BG_COUPON_ROW)
 
-    coffi1 = one_game.find_elements(By.XPATH, "//td[@data-market-type='RESULT']")[1].text
+    games_list = []
 
-    coffi2 = one_game.find_elements(By.XPATH, "//td[@data-market-type='RESULT']")[2].text
+    for game in games:
+        games_list.append(game)
+    return games_list
 
-    # coffi3 = one_game.find_elements('td', {'data-market-type': 'DOUBLE_CHANCE'})[0]
-    #
-    # coffi4 = one_game.find_elements('td', {'data-market-type': 'DOUBLE_CHANCE'})[1]
-    #
-    # coffi5 = one_game.find_elements('td', {'data-market-type': 'DOUBLE_CHANCE'})[2]
-    #
-    # coffi6 = one_game.find_elements('td', {'data-market-type': 'HANDICAP'})[0]
-    #
-    # coffi7 = one_game.find_elements('td', {'data-market-type': 'HANDICAP'})[1]
-    #
-    # coffi8 = one_game.find_elements('td', {'data-market-type': 'TOTAL'})[0]
-    #
-    # coffi9 = one_game.find_elements('td', {'data-market-type': 'TOTAL'})[1]
 
-    print(team1, team2, coffi0, coffi1, coffi2) #, coffi3, coffi4, coffi5, coffi6, coffi7, coffi8, coffi9)
+print(f"я нашел {len(games_counter())} игры за 24 часа, работаем...")
+
+"""
+ДОБАВИТЬ TQDM НА ПРОГРЕСС БАР МАТЧЕЙ ЧТОБЫ ДОБАВЛЯЛ ***len(games_in_league)***
+"""
+
+# main_pbar = tqdm(desc="собираю матчи", total=len(games_counter()))
+
+for one_league in leagues_list:
+    games_in_league = one_league.find_elements(By.CLASS_NAME, 'bg')
+
+    league_name = one_league.find_element(By.CLASS_NAME, "category-label").text
+
+    if DEBUG_MODE:
+        print(f"название лиги: {league_name}, матчей в лиге: {len(games_in_league)}")
+
+    for one_game in games_in_league:
+        # game_dict = []
+
+        team1 = one_game.find_elements(By.CLASS_NAME, 'member-link')[0].text
+        team2 = one_game.find_elements(By.CLASS_NAME, 'member-link')[1].text
+
+        class_date = one_game.find_element(By.CLASS_NAME, 'date').text
+
+        day_of_game = change_date(class_date)[0]
+        month_of_game = change_date(class_date)[1]
+        year_of_game = change_date(class_date)[2]
+        time_of_game = change_date(class_date)[3]
+
+        coffi0 = one_game.find_elements(By.CLASS_NAME, "height-column-with-price")[0].text
+        coffi1 = one_game.find_elements(By.CLASS_NAME, "height-column-with-price")[1].text
+        coffi2 = one_game.find_elements(By.CLASS_NAME, "height-column-with-price")[2].text
+        coffi3 = one_game.find_elements(By.CLASS_NAME, "height-column-with-price")[3].text
+        coffi4 = one_game.find_elements(By.CLASS_NAME, "height-column-with-price")[4].text
+        coffi5 = one_game.find_elements(By.CLASS_NAME, "height-column-with-price")[5].text
+        coffi6 = one_game.find_elements(By.CLASS_NAME, "height-column-with-price")[6].text
+        coffi7 = one_game.find_elements(By.CLASS_NAME, "height-column-with-price")[7].text
+        coffi8 = one_game.find_elements(By.CLASS_NAME, "height-column-with-price")[8].text
+        coffi9 = one_game.find_elements(By.CLASS_NAME, "height-column-with-price")[9].text
+
+        print(coffi9.split())
+
+        if coffi9.split() != '(2.5)':
+            print(False)
+
+        # print(team1,
+        #       team2,
+        #       day_of_game,
+        #       month_of_game,
+        #       year_of_game,
+        #       time_of_game,
+        #       coffi1,
+        #       coffi2,
+        #       coffi3,
+        #       coffi4,
+        #       coffi5,
+        #       coffi6,
+        #       coffi7,
+        #       coffi8,
+        #       coffi9)
+
+#     main_pbar.update(len(games_in_league))
+# main_pbar.close()
 
 input(Fore.BLUE + 'Press any key...')
 
