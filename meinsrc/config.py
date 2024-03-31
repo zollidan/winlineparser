@@ -65,3 +65,13 @@ def change_date(class_date):
         year = datetime.date.today().strftime("%Y")
         time = class_date.split()[2]
         return day, month, year, time
+
+
+def games_counter(main_driver):
+    games = main_driver.find_elements(BG_COUPON_ROW)
+
+    games_list = []
+
+    for game in games:
+        games_list.append(game)
+    return games_list

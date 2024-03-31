@@ -1,16 +1,9 @@
-import datetime
 import logging
 import time
 import typing
-import uuid
 
 import chromedriver_autoinstaller
-import xlsxwriter
-from art import tprint
-from bs4 import BeautifulSoup
 from colorama import Fore
-from colorama import init
-from colorama import just_fix_windows_console
 from selenium import webdriver
 from selenium.common import TimeoutException
 from selenium.webdriver.chrome.options import Options
@@ -21,10 +14,8 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.wait import WebDriverWait
 from tqdm import tqdm
 
-from config import PARSER_URL, COUNTRY_CLICK_XPATH, LEAGUE_BLOCK_XPATH, LEAGUE_NAME_CLASS, \
-    MATCHES_BLOCK_CLASS, EXCEL_HEADERS, BOTTOM_SIGN, ITERATIONS_TO_BOTTOM, CATEGORY_CONTAINER, \
-    BG_COUPON_ROW, change_month, change_date, DEBUG_MODE
-from schemas import FootballRow
+from config import PARSER_URL, BOTTOM_SIGN, ITERATIONS_TO_BOTTOM, CATEGORY_CONTAINER, \
+    BG_COUPON_ROW, change_date, DEBUG_MODE, games_counter
 
 
 class MainDriver:
@@ -34,7 +25,7 @@ class MainDriver:
 
         try:
             options = Options()
-            options.add_argument("--headless")
+            # options.add_argument("--headless")
             options.add_argument("--disable-blink-features=AutomationControlled")
             options.add_argument("--ignore-certificate-errors")
             options.add_experimental_option('useAutomationExtension', False)
@@ -88,6 +79,10 @@ class MainDriver:
     def scroll_into_view(self, element: WebElement) -> typing.NoReturn:
         self.driver.execute_script('arguments[0].scrollIntoView(true)', element)
 
+    def current_url(self):
+        return self.driver.current_url
+
+
 print(Fore.GREEN + "собираю дату")
 
 main_driver = MainDriver()
@@ -107,22 +102,7 @@ leagues_list = []
 for league in leagues:
     leagues_list.append(league)
 
-
-def games_counter():
-    games = main_driver.find_elements(BG_COUPON_ROW)
-
-    games_list = []
-
-    for game in games:
-        games_list.append(game)
-    return games_list
-
-
-print(f"я нашел {len(games_counter())} игры за 24 часа, работаем...")
-
-"""
-ДОБАВИТЬ TQDM НА ПРОГРЕСС БАР МАТЧЕЙ ЧТОБЫ ДОБАВЛЯЛ ***len(games_in_league)***
-"""
+print(f"я нашел {len(games_counter(main_driver))} игры за 24 часа, работаем...")
 
 # main_pbar = tqdm(desc="собираю матчи", total=len(games_counter()))
 
@@ -162,6 +142,18 @@ for one_league in leagues_list:
 
         if coffi9.split() != '(2.5)':
             print(False)
+            game_href = one_game.find_elements(By.CLASS_NAME, 'member-link')[0]
+            main_driver.click(game_href)
+            link_array = str(main_driver.current_url()).split("+")
+            uniq_game_code = link_array[-1]
+            total_class_id = 'shortcutLink_event' + uniq_game_code + 'type3'
+            if DEBUG_MODE:
+                print(f"динамический айдишник: {total_class_id}")
+            print(f"класс === XPATH ===> f//td[@id='{total_class_id}']")
+            totals_btn = main_driver.find_element(f"//td[@id='{total_class_id}']")
+
+            #main_driver.click(totals_btn)
+            time.sleep(10)
 
         # print(team1,
         #       team2,
