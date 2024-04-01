@@ -1,11 +1,12 @@
 import logging
+import pathlib
 import time
 import typing
 
 import chromedriver_autoinstaller
 from colorama import Fore
 from selenium import webdriver
-from selenium.common import TimeoutException
+from selenium.common import TimeoutException, StaleElementReferenceException
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.webdriver import WebDriver
 from selenium.webdriver.common.by import By
@@ -15,7 +16,7 @@ from selenium.webdriver.support.wait import WebDriverWait
 from tqdm import tqdm
 
 from config import PARSER_URL, BOTTOM_SIGN, ITERATIONS_TO_BOTTOM, CATEGORY_CONTAINER, \
-    BG_COUPON_ROW, change_date, DEBUG_MODE, games_counter
+    change_date, DEBUG_MODE, games_counter, get_new_prices
 
 
 class MainDriver:
@@ -25,7 +26,7 @@ class MainDriver:
 
         try:
             options = Options()
-            # options.add_argument("--headless")
+            options.add_argument("--headless")
             options.add_argument("--disable-blink-features=AutomationControlled")
             options.add_argument("--ignore-certificate-errors")
             options.add_experimental_option('useAutomationExtension', False)
@@ -82,6 +83,9 @@ class MainDriver:
     def current_url(self):
         return self.driver.current_url
 
+    def page_source(self):
+        return self.driver.page_source
+
 
 print(Fore.GREEN + "собираю дату")
 
@@ -104,9 +108,17 @@ for league in leagues:
 
 print(f"я нашел {len(games_counter(main_driver))} игры за 24 часа, работаем...")
 
-# main_pbar = tqdm(desc="собираю матчи", total=len(games_counter()))
+main_pbar = tqdm(desc="собираю матчи", total=len(games_counter(main_driver)))
+
+with open("page.html", 'w', encoding="utf-8") as file:
+    file.write(main_driver.page_source())
+if DEBUG_MODE:
+    print("записал новую страницу")
 
 for one_league in leagues_list:
+    if DEBUG_MODE:
+        print("вошел в цикл")
+
     games_in_league = one_league.find_elements(By.CLASS_NAME, 'bg')
 
     league_name = one_league.find_element(By.CLASS_NAME, "category-label").text
@@ -138,22 +150,11 @@ for one_league in leagues_list:
         coffi8 = one_game.find_elements(By.CLASS_NAME, "height-column-with-price")[8].text
         coffi9 = one_game.find_elements(By.CLASS_NAME, "height-column-with-price")[9].text
 
-        print(coffi9.split())
-
-        if coffi9.split() != '(2.5)':
-            print(False)
-            game_href = one_game.find_elements(By.CLASS_NAME, 'member-link')[0]
-            main_driver.click(game_href)
-            link_array = str(main_driver.current_url()).split("+")
-            uniq_game_code = link_array[-1]
-            total_class_id = 'shortcutLink_event' + uniq_game_code + 'type3'
-            if DEBUG_MODE:
-                print(f"динамический айдишник: {total_class_id}")
-            print(f"класс === XPATH ===> f//td[@id='{total_class_id}']")
-            totals_btn = main_driver.find_element(f"//td[@id='{total_class_id}']")
-
-            #main_driver.click(totals_btn)
-            time.sleep(10)
+        """
+        топовая идея, можно сначала сделать весь парсинг, потом замутить проверку, главное взять все ссылки на игры
+        потом проверяю если коэфф не такой как надо то просто добавляю на это строчку еще и нужный запрос там делаю
+        все дела вот такая вот идея даааа))
+        """
 
         # print(team1,
         #       team2,
@@ -171,9 +172,11 @@ for one_league in leagues_list:
         #       coffi8,
         #       coffi9)
 
-#     main_pbar.update(len(games_in_league))
-# main_pbar.close()
+    main_pbar.update(len(games_in_league))
+main_pbar.close()
+
+main_driver.close()
 
 input(Fore.BLUE + 'Press any key...')
 
-exit()
+

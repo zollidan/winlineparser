@@ -1,5 +1,7 @@
 import datetime
 
+from selenium.webdriver.common.by import By
+
 BASE_URL = 'https://www.marathonbet.ru/su/?cppcids=all'
 PARSER_URL = 'https://www.marathonbet.ru/su/betting/Football+-+11?interval=H24'
 
@@ -75,3 +77,30 @@ def games_counter(main_driver):
     for game in games:
         games_list.append(game)
     return games_list
+
+
+def get_new_prices(one_game, main_driver):
+    game_href = one_game.find_elements(By.CLASS_NAME, 'member-link')[0]
+    main_driver.click(game_href)
+    link_array = str(main_driver.current_url()).split("+")
+    uniq_game_code = link_array[-1]
+    total_class_id = 'shortcutLink_event' + uniq_game_code + 'type3'
+    if DEBUG_MODE:
+        print(f"динамический айдишник: {total_class_id}")
+    totals_btn = main_driver.find_element(f"//td[@id='{total_class_id}']")
+    main_driver.click(totals_btn)
+
+    main_table = main_driver.find_elements(
+        "//body[1]/div[6]/div[1]/div[3]/div[1]/div[1]/div[3]/div[2]/div[1]/div[1]/div[1]/div[1]/div[1]/div[1]/div[1]/div[2]/div[1]/div[1]/div[1]/div[1]/div[1]/div[2]/div[1]/div[2]/div[1]/div[3]/div[1]/div[1]/div[1]/table[2]/tbody[1]/tr")
+    """
+    сделал поиск всех коффи из таблицы, потом сделать все списком убрать больше меньше и вернуть новые коффи, спасибо)))
+
+    """
+    prices = []
+    for price in main_table:
+        prices.append(price.text)
+    prices.remove('Меньше Больше')
+    new_coffi8 = prices[2].replace('\n', ' ').split()[1]
+    new_coffi9 = prices[2].replace('\n', ' ').split()[3]
+
+    return new_coffi8, new_coffi9
