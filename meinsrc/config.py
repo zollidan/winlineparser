@@ -14,6 +14,8 @@ COUNTRY_CLICK_XPATH = '//a[contains(@class, "countries-list__item-link")]'
 LEAGUE_BLOCK_XPATH = '//div[@class="block-sport__champ-item ng-star-inserted"]'
 ITERATIONS_TO_BOTTOM = 10
 
+VERSION = '0.4.4'
+
 LEAGUE_NAME_CLASS = 'block-tournament-header__title'
 MATCHES_BLOCK_CLASS = 'ww-feature-block-event-dsk'
 
@@ -104,3 +106,4 @@ def get_new_prices(one_game, main_driver):
     new_coffi9 = prices[2].replace('\n', ' ').split()[3]
 
     return new_coffi8, new_coffi9
+

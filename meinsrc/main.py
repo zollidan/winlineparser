@@ -4,6 +4,8 @@ import time
 import typing
 
 import chromedriver_autoinstaller
+import pandas as pd
+from art import tprint
 from colorama import Fore
 from selenium import webdriver
 from selenium.common import TimeoutException, StaleElementReferenceException
@@ -16,7 +18,10 @@ from selenium.webdriver.support.wait import WebDriverWait
 from tqdm import tqdm
 
 from config import PARSER_URL, BOTTOM_SIGN, ITERATIONS_TO_BOTTOM, CATEGORY_CONTAINER, \
-    change_date, DEBUG_MODE, games_counter, get_new_prices
+    change_date, DEBUG_MODE, games_counter, VERSION
+
+tprint("esmeralda")
+print(f'version: {VERSION}')
 
 
 class MainDriver:
@@ -38,8 +43,8 @@ class MainDriver:
             options.add_experimental_option("prefs", prefs)
             options.add_argument('log-level=3')
             return webdriver.Chrome(options=options)
-        except Exception:
-            return None
+        except Exception as e:
+            return e
 
     def __init__(self):
         self.driver = self.init_driver()
@@ -115,6 +120,8 @@ with open("page.html", 'w', encoding="utf-8") as file:
 if DEBUG_MODE:
     print("записал новую страницу")
 
+matrix = []
+
 for one_league in leagues_list:
     if DEBUG_MODE:
         print("вошел в цикл")
@@ -127,7 +134,7 @@ for one_league in leagues_list:
         print(f"название лиги: {league_name}, матчей в лиге: {len(games_in_league)}")
 
     for one_game in games_in_league:
-        # game_dict = []
+        game_dict = []
 
         team1 = one_game.find_elements(By.CLASS_NAME, 'member-link')[0].text
         team2 = one_game.find_elements(By.CLASS_NAME, 'member-link')[1].text
@@ -156,27 +163,74 @@ for one_league in leagues_list:
         все дела вот такая вот идея даааа))
         """
 
-        # print(team1,
-        #       team2,
-        #       day_of_game,
-        #       month_of_game,
-        #       year_of_game,
-        #       time_of_game,
-        #       coffi1,
-        #       coffi2,
-        #       coffi3,
-        #       coffi4,
-        #       coffi5,
-        #       coffi6,
-        #       coffi7,
-        #       coffi8,
-        #       coffi9)
+        if DEBUG_MODE:
+            print(team1,
+                  team2,
+                  day_of_game,
+                  month_of_game,
+                  year_of_game,
+                  time_of_game,
+                  coffi1,
+                  coffi2,
+                  coffi3,
+                  coffi4,
+                  coffi5,
+                  coffi6,
+                  coffi7,
+                  coffi8,
+                  coffi9)
+
+        game_dict.append(team1)
+        game_dict.append(team2)
+        game_dict.append(league_name)
+        game_dict.append('link to game')
+        game_dict.append(day_of_game)
+        game_dict.append(month_of_game)
+        game_dict.append(year_of_game)
+        game_dict.append(time_of_game)
+        game_dict.append(coffi0)
+        game_dict.append(coffi1)
+        game_dict.append(coffi2)
+        game_dict.append(coffi3)
+        game_dict.append(coffi4)
+        game_dict.append(coffi5)
+        game_dict.append(coffi6)
+        game_dict.append(coffi7)
+        game_dict.append(coffi8.split()[0])
+        game_dict.append(coffi8.split()[1])
+        game_dict.append(coffi9.split()[1])
+
+        matrix.append(game_dict)
 
     main_pbar.update(len(games_in_league))
 main_pbar.close()
 
 main_driver.close()
 
+try:
+    df = pd.DataFrame(matrix)
+    # df.columns = ['команда1',
+    #               'команда2',
+    #               'лига',
+    #               'ссылка на игру'
+    #               'день',
+    #               'месяц',
+    #               'год',
+    #               'время',
+    #               '1',
+    #               'x',
+    #               '2',
+    #               '1х',
+    #               '12',
+    #               'х2',
+    #               'фора1',
+    #               'фора2',
+    #               'марафон',
+    #               'меньше',
+    #               'больше',
+    #               ]
+    df.to_excel('marafon_data.xlsx', sheet_name='DATA', index=False)
+except PermissionError:
+    print('Скорее всего вы не закрыли файл эксель.')
+
 input(Fore.BLUE + 'Press any key...')
-
-

@@ -1,17 +1,7 @@
 import time
-import pathlib
 
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
+from art import tprint
 
-options = Options()
+from meinsrc.config import VERSION
 
-# options.add_argument("--headless")
 
-driver = webdriver.Chrome(options=options)
-
-driver.get(str(pathlib.Path().absolute()) + '\page.html')
-
-time.sleep(10)
-
-driver.quit()
