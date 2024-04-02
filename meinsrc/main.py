@@ -34,6 +34,7 @@ class MainDriver:
             options.add_argument("--headless")
             options.add_argument("--disable-blink-features=AutomationControlled")
             options.add_argument("--ignore-certificate-errors")
+            options.add_argument('--ignore-ssl-errors')
             options.add_experimental_option('useAutomationExtension', False)
             options.add_experimental_option("excludeSwitches", ["enable-automation", "enable-logging"])
             prefs = {"profile.default_content_settings.popups": 0,
@@ -115,8 +116,8 @@ print(f"я нашел {len(games_counter(main_driver))} игры за 24 час�
 
 main_pbar = tqdm(desc="собираю матчи", total=len(games_counter(main_driver)))
 
-with open("page.html", 'w', encoding="utf-8") as file:
-    file.write(main_driver.page_source())
+# with open("page.html", 'w', encoding="utf-8") as file:
+#     file.write(main_driver.page_source())
 if DEBUG_MODE:
     print("записал новую страницу")
 
@@ -145,6 +146,11 @@ for one_league in leagues_list:
         month_of_game = change_date(class_date)[1]
         year_of_game = change_date(class_date)[2]
         time_of_game = change_date(class_date)[3]
+
+        """
+        ищу ссылку на игру
+        """
+        game_href = one_game.find_elements(By.CLASS_NAME, 'member-link')[0].get_attribute('href')
 
         coffi0 = one_game.find_elements(By.CLASS_NAME, "height-column-with-price")[0].text
         coffi1 = one_game.find_elements(By.CLASS_NAME, "height-column-with-price")[1].text
@@ -183,7 +189,7 @@ for one_league in leagues_list:
         game_dict.append(team1)
         game_dict.append(team2)
         game_dict.append(league_name)
-        game_dict.append('link to game')
+        game_dict.append(game_href)
         game_dict.append(day_of_game)
         game_dict.append(month_of_game)
         game_dict.append(year_of_game)
@@ -205,32 +211,96 @@ for one_league in leagues_list:
     main_pbar.update(len(games_in_league))
 main_pbar.close()
 
-main_driver.close()
-
 try:
     df = pd.DataFrame(matrix)
-    # df.columns = ['команда1',
-    #               'команда2',
-    #               'лига',
-    #               'ссылка на игру'
-    #               'день',
-    #               'месяц',
-    #               'год',
-    #               'время',
-    #               '1',
-    #               'x',
-    #               '2',
-    #               '1х',
-    #               '12',
-    #               'х2',
-    #               'фора1',
-    #               'фора2',
-    #               'марафон',
-    #               'меньше',
-    #               'больше',
-    #               ]
+    df.columns = ['команда1',
+                  'команда2',
+                  'лига',
+                  'ссылка',
+                  'день',
+                  'месяц',
+                  'год',
+                  'время',
+                  '1',
+                  'x',
+                  '2',
+                  '1х',
+                  '12',
+                  'х2',
+                  'фора1',
+                  'фора2',
+                  'марафон',
+                  'меньше',
+                  'больше',
+                  ]
+    """
+        далее делаю мега люлю и проверяю коэффы и ищу нужные
+    """
+
+    count_of_not_two_coffi = []
+
+    for index, row in df.iterrows():
+        if row['марафон'] != '(2.5)':
+            count_of_not_two_coffi.append(index)
+
+    second_pbar = tqdm(desc="добираю коэффициенты", total=len(count_of_not_two_coffi))
+
+    for index, row in df.iterrows():
+        if row['марафон'] != '(2.5)':
+            if DEBUG_MODE:
+                print(row['ссылка'], index)
+            main_driver.open_page(row['ссылка'])
+            link_array = str(main_driver.current_url()).split("+")
+            uniq_game_code = link_array[-1]
+            total_class_id = 'shortcutLink_event' + uniq_game_code + 'type3'
+            if DEBUG_MODE:
+                print(f"динамический айдишник: {total_class_id}")
+            totals_btn = main_driver.find_element(f"//td[@id='{total_class_id}']")
+            main_driver.click(totals_btn)
+
+            main_table = main_driver.find_elements(
+                "//body[1]/div[6]/div[1]/div[3]/div[1]/div[1]/div[3]/div[2]/div[1]/div[1]/div[1]/div[1]/div[1]/div[1]/div[1]/div[2]/div[1]/div[1]/div[1]/div[1]/div[1]/div[2]/div[1]/div[2]/div[1]/div[3]/div[1]/div[1]/div[1]/table[2]/tbody[1]/tr")
+            """
+            сделал поиск всех коффи из таблицы, потом сделать все списком убрать больше меньше и вернуть новые коффи, спасибо)))
+
+            """
+            prices = []
+            for price in main_table:
+                price = price.text.replace('\n', ' ')
+                if '(2.5)' in price:
+                    price_spitted = price.split()
+                    prices.append(price_spitted[1])
+                    prices.append(price_spitted[3])
+
+            df.loc[index, '2.5'] = '2.5'
+            try:
+                df.loc[index, 'меньше2'] = prices[0]
+                df.loc[index, 'больше2'] = prices[1]
+            except IndexError:
+                if DEBUG_MODE:
+                    print(f"\nпроизошла ошибка игры номер {index}")
+                df.loc[index, 'меньше2'] = "—"
+                df.loc[index, 'больше2'] = "—"
+                second_pbar.update(1)
+                continue
+
+        else:
+            continue
+        second_pbar.update(1)
+
+    second_pbar.close()
+
     df.to_excel('marafon_data.xlsx', sheet_name='DATA', index=False)
 except PermissionError:
     print('Скорее всего вы не закрыли файл эксель.')
 
+main_driver.close()
+
 input(Fore.BLUE + 'Press any key...')
+
+
+"""
+    затравочка на будущую версию, сделать проверку существует ли файл данных если да удалить
+    если нет то создать в название сделать дату сегодняшнюю
+
+"""
