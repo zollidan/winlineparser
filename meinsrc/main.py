@@ -20,7 +20,7 @@ from tqdm import tqdm
 from config import PARSER_URL, BOTTOM_SIGN, ITERATIONS_TO_BOTTOM, CATEGORY_CONTAINER, \
     change_date, DEBUG_MODE, games_counter, VERSION
 
-tprint("esmeralda")
+tprint("marafon")
 print(f'version: {VERSION}')
 
 
