@@ -5,6 +5,7 @@ import typing
 
 import chromedriver_autoinstaller
 import pandas as pd
+import selenium
 from art import tprint
 from colorama import Fore
 from selenium import webdriver
@@ -256,33 +257,39 @@ try:
             if DEBUG_MODE:
                 print(f"динамический айдишник: {total_class_id}")
             totals_btn = main_driver.find_element(f"//td[@id='{total_class_id}']")
-            main_driver.click(totals_btn)
 
-            main_table = main_driver.find_elements(
-                "//body[1]/div[6]/div[1]/div[3]/div[1]/div[1]/div[3]/div[2]/div[1]/div[1]/div[1]/div[1]/div[1]/div[1]/div[1]/div[2]/div[1]/div[1]/div[1]/div[1]/div[1]/div[2]/div[1]/div[2]/div[1]/div[3]/div[1]/div[1]/div[1]/table[2]/tbody[1]/tr")
-            """
-            сделал поиск всех коффи из таблицы, потом сделать все списком убрать больше меньше и вернуть новые коффи, спасибо)))
-
-            """
-            prices = []
-            for price in main_table:
-                price = price.text.replace('\n', ' ')
-                if '(2.5)' in price:
-                    price_spitted = price.split()
-                    prices.append(price_spitted[1])
-                    prices.append(price_spitted[3])
-
-            df.loc[index, '2.5'] = '2.5'
             try:
-                df.loc[index, 'меньше2'] = prices[0]
-                df.loc[index, 'больше2'] = prices[1]
-            except IndexError:
-                if DEBUG_MODE:
-                    print(f"\nпроизошла ошибка игры номер {index}")
-                df.loc[index, 'меньше2'] = "—"
-                df.loc[index, 'больше2'] = "—"
-                second_pbar.update(1)
+                main_driver.click(totals_btn)
+
+                main_table = main_driver.find_elements(
+                    "//body[1]/div[6]/div[1]/div[3]/div[1]/div[1]/div[3]/div[2]/div[1]/div[1]/div[1]/div[1]/div[1]/div[1]/div[1]/div[2]/div[1]/div[1]/div[1]/div[1]/div[1]/div[2]/div[1]/div[2]/div[1]/div[3]/div[1]/div[1]/div[1]/table[2]/tbody[1]/tr")
+                """
+                сделал поиск всех коффи из таблицы, потом сделать все списком убрать больше меньше и вернуть новые коффи, спасибо)))
+
+                """
+                prices = []
+                for price in main_table:
+                    price = price.text.replace('\n', ' ')
+                    if '(2.5)' in price:
+                        price_spitted = price.split()
+                        prices.append(price_spitted[1])
+                        prices.append(price_spitted[3])
+
+                df.loc[index, '2.5'] = '2.5'
+                try:
+                    df.loc[index, 'меньше2'] = prices[0]
+                    df.loc[index, 'больше2'] = prices[1]
+                except IndexError:
+                    if DEBUG_MODE:
+                        print(f"\nпроизошла ошибка игры номер {index}")
+                    df.loc[index, 'меньше2'] = "—"
+                    df.loc[index, 'больше2'] = "—"
+                    second_pbar.update(1)
+                    continue
+            except selenium.common.exceptions.JavascriptException:
+                print("тоталы не найдены на сайте")
                 continue
+
 
         else:
             continue

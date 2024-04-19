@@ -36,9 +36,9 @@ class MainDriver:
 
         try:
             options = Options()
-            #options.add_argument("--headless")
+            options.add_argument("--headless")
             options.add_argument("--disable-blink-features=AutomationControlled")
-            # options.add_argument("--ignore-certificate-errors")
+            options.add_argument("--ignore-certificate-errors")
             options.add_experimental_option('useAutomationExtension', False)
             options.add_experimental_option("excludeSwitches", ["enable-automation", "enable-logging"])
             prefs = {"profile.default_content_settings.popups": 0,
