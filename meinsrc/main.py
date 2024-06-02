@@ -57,8 +57,12 @@ class MainDriver:
             print(Fore.RED + "Chromedriver initialization error(#1)")
             raise Exception("Chromedriver initialization error(#1)")
 
-    def close(self):
+    def quit(self):
         self.driver.quit()
+
+    def close(self):
+        self.driver.close()
+    
 
     def open_page(self, url):
         self.driver.get(url)
@@ -244,6 +248,10 @@ try:
         if row['марафон'] != '(2.5)':
             count_of_not_two_coffi.append(index)
 
+    main_driver.quit()
+
+    main_driver = MainDriver()
+
     second_pbar = tqdm(desc="добираю коэффициенты", total=len(count_of_not_two_coffi))
 
     for index, row in df.iterrows():
@@ -263,10 +271,7 @@ try:
 
                 main_table = main_driver.find_elements(
                     "//body[1]/div[6]/div[1]/div[3]/div[1]/div[1]/div[3]/div[2]/div[1]/div[1]/div[1]/div[1]/div[1]/div[1]/div[1]/div[2]/div[1]/div[1]/div[1]/div[1]/div[1]/div[2]/div[1]/div[2]/div[1]/div[3]/div[1]/div[1]/div[1]/table[2]/tbody[1]/tr")
-                """
-                сделал поиск всех коффи из таблицы, потом сделать все списком убрать больше меньше и вернуть новые коффи, спасибо)))
-
-                """
+      
                 prices = []
                 for price in main_table:
                     price = price.text.replace('\n', ' ')
@@ -279,35 +284,27 @@ try:
                 try:
                     df.loc[index, 'меньше2'] = prices[0]
                     df.loc[index, 'больше2'] = prices[1]
+                    
                 except IndexError:
                     if DEBUG_MODE:
                         print(f"\nпроизошла ошибка игры номер {index}")
                     df.loc[index, 'меньше2'] = "—"
                     df.loc[index, 'больше2'] = "—"
-                    second_pbar.update(1)
                     continue
             except selenium.common.exceptions.JavascriptException:
                 print("тоталы не найдены на сайте")
                 continue
-
-
+            second_pbar.update(1)
         else:
             continue
-        second_pbar.update(1)
-
+            second_pbar.update(1)
+        
     second_pbar.close()
+    main_driver.quit()
 
     df.to_excel('marafon_data.xlsx', sheet_name='DATA', index=False)
 except PermissionError:
     print('Скорее всего вы не закрыли файл эксель.')
 
-main_driver.close()
-
 input(Fore.BLUE + 'Press any key...')
 
-
-"""
-    затравочка на будущую версию, сделать проверку существует ли файл данных если да удалить
-    если нет то создать в название сделать дату сегодняшнюю
-
-"""

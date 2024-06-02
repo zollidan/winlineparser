@@ -14,7 +14,7 @@ COUNTRY_CLICK_XPATH = '//a[contains(@class, "countries-list__item-link")]'
 LEAGUE_BLOCK_XPATH = '//div[@class="block-sport__champ-item ng-star-inserted"]'
 ITERATIONS_TO_BOTTOM = 35
 
-VERSION = '0.5.5'
+VERSION = '1.0.0'
 
 LEAGUE_NAME_CLASS = 'block-tournament-header__title'
 MATCHES_BLOCK_CLASS = 'ww-feature-block-event-dsk'
